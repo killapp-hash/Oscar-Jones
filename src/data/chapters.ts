@@ -799,11 +799,11 @@ export const CHAPTERS: Chapter[] = [
     readingTimeMinutes: 3,
     pullQuote: '“No fair!” complained a zombie in a tilted glitter hat. “We hadn’t even reached the pass-the-parcel round!”',
     illustration: {
-      src: '/src/assets/images/ch15_wikkidary_prison_1795404168987.jpg',
-      alt: 'Nightbramble police officers and Oscar escorting party-hatted ghosts and zombies toward Wikkidary Prison.',
-      caption: 'Fig. 7 — Nightbramble Police Department officers and Oscar marching the captured party-crashers into Wikkidary Prison.',
+      src: '/assets/aistudio/image_994cdb6e.png',
+      alt: 'Nightbramble Police Department officers escorting party-crowned ghosts with streamers and netted zombies in top hats toward the arched wooden doors of stone Wikkidary Prison.',
+      caption: 'Fig. 7 — Nightbramble Police Department officers escorting the captured partying ghosts and netted zombies into Wikkidary Prison.',
       figureNumber: 'Fig. 7',
-      aspect: '4:3',
+      aspect: '16:9',
     },
     marginNotes: [
       {

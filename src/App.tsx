@@ -15,7 +15,7 @@ import { BookReader, type FontScale, type PaperTheme } from './components/BookRe
 import { RouteMapView } from './components/RouteMapView';
 import { GalleryView } from './components/GalleryView';
 import { SettingsView } from './components/SettingsView';
-import { AboutAuthorView, type AuthorBio } from './components/AboutAuthorView';
+import { AboutAuthorView } from './components/AboutAuthorView';
 import { ResilientImage } from './components/ResilientImage';
 import { generateBookPdf } from './utils/pdfGenerator';
 
@@ -87,22 +87,6 @@ export default function App() {
   });
 
   const [settingsUnlocked, setSettingsUnlocked] = useState<boolean>(false);
-  const [authorBio, setAuthorBio] = useState<AuthorBio>(() => {
-    try {
-      const saved = localStorage.getItem('ellery_author_bio');
-      if (saved) {
-        const parsed = JSON.parse(saved) as Partial<AuthorBio>;
-        return {
-          name: parsed.name ?? '',
-          subtitle: parsed.subtitle ?? '',
-          body: parsed.body ?? '',
-        };
-      }
-    } catch {
-      // Ignore storage errors
-    }
-    return { name: '', subtitle: '', body: '' };
-  });
   const [partFilter, setPartFilter] = useState<(typeof PARTS)[number]>('All Parts');
   const [pdfState, setPdfState] = useState<{
     generating: boolean;
@@ -162,14 +146,6 @@ export default function App() {
       // Ignore storage errors
     }
   }, [storyMode]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('ellery_author_bio', JSON.stringify(authorBio));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [authorBio]);
 
   const openChapter = (num: number) => {
     setCurrentChapterNum(num);
@@ -696,10 +672,8 @@ export default function App() {
 
         {activeView === 'author' && (
           <AboutAuthorView
-            authorBio={authorBio}
             onOpenReader={() => navigateView('reader')}
             onOpenContents={() => navigateView('contents')}
-            onOpenSettings={() => navigateView('settings')}
           />
         )}
 
@@ -710,18 +684,15 @@ export default function App() {
             storyMode={storyMode}
             paperTheme={paperTheme}
             fontScale={fontScale}
-            authorBio={authorBio}
             onUnlock={() => setSettingsUnlocked(true)}
             onLock={() => setSettingsUnlocked(false)}
             onChangeShowImages={setShowImages}
             onChangeStoryMode={setStoryMode}
             onChangePaperTheme={setPaperTheme}
             onChangeFontScale={setFontScale}
-            onChangeAuthorBio={setAuthorBio}
             onResetDefaults={resetToDefaults}
             onOpenReader={() => navigateView('reader')}
             onOpenRouteMap={() => navigateView('map')}
-            onOpenAuthorPage={() => navigateView('author')}
           />
         )}
       </main>

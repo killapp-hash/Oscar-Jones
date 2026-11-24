@@ -10,13 +10,9 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Feather,
-  Check,
-  ArrowUpRight,
 } from 'lucide-react';
 import type { StoryMode } from '../data/chapters';
 import type { FontScale, PaperTheme } from './BookReader';
-import type { AuthorBio } from './AboutAuthorView';
 
 const SETTINGS_PASSWORD = '255555';
 
@@ -26,18 +22,15 @@ interface SettingsViewProps {
   storyMode: StoryMode;
   paperTheme: PaperTheme;
   fontScale: FontScale;
-  authorBio: AuthorBio;
   onUnlock: () => void;
   onLock: () => void;
   onChangeShowImages: (show: boolean) => void;
   onChangeStoryMode: (mode: StoryMode) => void;
   onChangePaperTheme: (theme: PaperTheme) => void;
   onChangeFontScale: (scale: FontScale) => void;
-  onChangeAuthorBio: (bio: AuthorBio) => void;
   onResetDefaults: () => void;
   onOpenReader: () => void;
   onOpenRouteMap: () => void;
-  onOpenAuthorPage: () => void;
 }
 
 export function SettingsView({
@@ -46,23 +39,19 @@ export function SettingsView({
   storyMode,
   paperTheme,
   fontScale,
-  authorBio,
   onUnlock,
   onLock,
   onChangeShowImages,
   onChangeStoryMode,
   onChangePaperTheme,
   onChangeFontScale,
-  onChangeAuthorBio,
   onResetDefaults,
   onOpenReader,
   onOpenRouteMap,
-  onOpenAuthorPage,
 }: SettingsViewProps) {
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [bioSavedNotice, setBioSavedNotice] = useState(false);
   const isDefault = showImages === true && storyMode === 'original';
 
   const handleUnlockSubmit = (e: FormEvent) => {
@@ -367,123 +356,6 @@ export function SettingsView({
                 >
                   <Moon className="w-3.5 h-3.5" />
                   Night
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Setting 4: About the Author Page Editor */}
-        <div className="bg-white dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 rounded-lg p-6 sm:p-7 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="space-y-1.5 max-w-xl">
-              <div className="flex items-center gap-2 text-[#00583A] dark:text-emerald-400">
-                <Feather className="w-4 h-4 shrink-0" />
-                <span className="font-display text-xs font-semibold uppercase tracking-[0.14em]">
-                  Author Page
-                </span>
-              </div>
-              <h3 className="font-display text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100">
-                Write “About the Author” Page
-              </h3>
-              <p className="font-serif text-sm leading-relaxed text-stone-600 dark:text-stone-400">
-                Compose or update the text shown on the <strong>About the Author</strong> page. Separate paragraphs with a blank line. Changes are saved automatically.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={onOpenAuthorPage}
-              className="inline-flex items-center gap-1.5 font-display text-xs font-semibold text-[#00583A] dark:text-emerald-400 hover:underline whitespace-nowrap shrink-0 self-start"
-            >
-              View Author Page
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="space-y-4 pt-4 border-t border-stone-200/80 dark:border-stone-800">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="author-name"
-                  className="block font-display text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-1.5"
-                >
-                  Author Name / Heading
-                </label>
-                <input
-                  id="author-name"
-                  type="text"
-                  value={authorBio.name}
-                  onChange={(e) => {
-                    onChangeAuthorBio({ ...authorBio, name: e.target.value });
-                    setBioSavedNotice(false);
-                  }}
-                  placeholder="e.g., About the Author"
-                  className="w-full rounded-md border border-stone-300 dark:border-stone-700 bg-[#FBF9F5] dark:bg-stone-950 px-3.5 py-2 font-display text-sm text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00583A]"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="author-subtitle"
-                  className="block font-display text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-1.5"
-                >
-                  Subtitle / Tagline (Optional)
-                </label>
-                <input
-                  id="author-subtitle"
-                  type="text"
-                  value={authorBio.subtitle}
-                  onChange={(e) => {
-                    onChangeAuthorBio({ ...authorBio, subtitle: e.target.value });
-                    setBioSavedNotice(false);
-                  }}
-                  placeholder="e.g., Written in Aotearoa New Zealand"
-                  className="w-full rounded-md border border-stone-300 dark:border-stone-700 bg-[#FBF9F5] dark:bg-stone-950 px-3.5 py-2 font-display text-sm text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00583A]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="author-body"
-                className="block font-display text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-1.5"
-              >
-                About the Author Text
-              </label>
-              <textarea
-                id="author-body"
-                rows={7}
-                value={authorBio.body}
-                onChange={(e) => {
-                  onChangeAuthorBio({ ...authorBio, body: e.target.value });
-                  setBioSavedNotice(false);
-                }}
-                placeholder="Write your About the Author story or biography here..."
-                className="w-full rounded-md border border-stone-300 dark:border-stone-700 bg-[#FBF9F5] dark:bg-stone-950 px-3.5 py-2.5 font-serif text-sm leading-relaxed text-stone-900 dark:text-stone-100 placeholder:text-stone-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00583A]"
-              />
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="font-display text-xs text-stone-500 dark:text-stone-400">
-                {bioSavedNotice ? (
-                  <span className="inline-flex items-center gap-1 font-semibold text-[#00583A] dark:text-emerald-400">
-                    <Check className="w-3.5 h-3.5" />
-                    Saved to About the Author page
-                  </span>
-                ) : (
-                  'Auto-saved as you type'
-                )}
-              </span>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setBioSavedNotice(true)}
-                  className="px-4 py-2 rounded-md bg-[#00583A] hover:bg-[#00442D] text-white font-display text-xs font-semibold inline-flex items-center gap-1.5 transition-colors"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  Save Author Page
                 </button>
               </div>
             </div>
