@@ -1,4 +1,16 @@
-import { ChevronLeft, ChevronRight, Check, Sun, Moon, BookOpen } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Sun,
+  Moon,
+  BookOpen,
+  Volume2,
+  Pause,
+  Play,
+  Square,
+} from 'lucide-react';
 import { CHAPTERS, getChapterParagraphs, type Chapter, type StoryMode } from '../data/chapters';
 import { NztaSignHeader } from './NztaSignHeader';
 import { ResilientImage } from './ResilientImage';
@@ -52,6 +64,142 @@ export function BookReader({
   const progressPct = Math.round((chapter.number / CHAPTERS.length) * 100);
   const activeParagraphs = getChapterParagraphs(chapter, storyMode);
 
+  const speechSupported =
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    typeof SpeechSynthesisUtterance !== 'undefined';
+
+  const [speechStatus, setSpeechStatus] = useState<'idle' | 'playing' | 'paused'>('idle');
+  const [spokenIndex, setSpokenIndex] = useState<number | null>(null);
+  const [speechRate, setSpeechRate] = useState<number>(1);
+  const [, setVoicesLoaded] = useState<number>(0);
+  const sessionRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!speechSupported) return;
+    const handleVoicesChanged = () => setVoicesLoaded((n) => n + 1);
+    window.speechSynthesis.addEventListener?.('voiceschanged', handleVoicesChanged);
+    return () => {
+      window.speechSynthesis.removeEventListener?.('voiceschanged', handleVoicesChanged);
+    };
+  }, [speechSupported]);
+
+  const pickBritishVoice = useCallback((): SpeechSynthesisVoice | null => {
+    if (!speechSupported) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+
+    const britishVoices = voices.filter((v) => {
+      const lang = v.lang.replace('_', '-').toLowerCase();
+      return lang.startsWith('en-gb') || /uk english|british/i.test(v.name);
+    });
+
+    if (britishVoices.length > 0) {
+      return (
+        britishVoices.find((v) => /natural|google|daniel|libby|sonia|ryan|kate|oliver|george|hazel|serena/i.test(v.name)) ??
+        britishVoices[0]
+      );
+    }
+
+    const fallbackLangs = ['en-nz', 'en-au', 'en'];
+    for (const lang of fallbackLangs) {
+      const match = voices.find((v) => v.lang.replace('_', '-').toLowerCase().startsWith(lang));
+      if (match) return match;
+    }
+    return null;
+  }, [speechSupported]);
+
+  const stopSpeech = useCallback(() => {
+    sessionRef.current += 1;
+    if (speechSupported) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeechStatus('idle');
+    setSpokenIndex(null);
+  }, [speechSupported]);
+
+  const speakQueueFrom = useCallback(
+    (startIndex: number, rate: number) => {
+      if (!speechSupported) return;
+      const items = [
+        `Chapter ${chapter.number}. ${chapter.title}.`,
+        ...activeParagraphs,
+      ];
+      // Map item 0 -> spokenIndex -1 (heading), item i+1 -> spokenIndex i
+      const safeStart = Math.max(0, Math.min(startIndex, items.length - 1));
+      const sessionId = ++sessionRef.current;
+
+      window.speechSynthesis.cancel();
+      setSpeechStatus('playing');
+
+      const voice = pickBritishVoice();
+
+      const speakItem = (queueIdx: number) => {
+        if (sessionRef.current !== sessionId) return;
+        if (queueIdx >= items.length) {
+          setSpeechStatus('idle');
+          setSpokenIndex(null);
+          return;
+        }
+
+        setSpokenIndex(queueIdx - 1);
+        const utterance = new SpeechSynthesisUtterance(items[queueIdx]);
+        utterance.rate = rate;
+        utterance.lang = voice?.lang || 'en-GB';
+        if (voice) utterance.voice = voice;
+
+        utterance.onend = () => {
+          if (sessionRef.current !== sessionId) return;
+          speakItem(queueIdx + 1);
+        };
+
+        utterance.onerror = () => {
+          if (sessionRef.current !== sessionId) return;
+          setSpeechStatus('idle');
+          setSpokenIndex(null);
+        };
+
+        window.speechSynthesis.speak(utterance);
+      };
+
+      speakItem(safeStart);
+    },
+    [speechSupported, chapter.number, chapter.title, activeParagraphs, pickBritishVoice],
+  );
+
+  const handleTogglePlayPause = () => {
+    if (!speechSupported) return;
+    if (speechStatus === 'playing') {
+      sessionRef.current += 1;
+      window.speechSynthesis.cancel();
+      setSpeechStatus('paused');
+    } else if (speechStatus === 'paused') {
+      const resumeQueueIndex = spokenIndex !== null ? spokenIndex + 1 : 0;
+      speakQueueFrom(resumeQueueIndex, speechRate);
+    } else {
+      speakQueueFrom(0, speechRate);
+    }
+  };
+
+  const handleChangeRate = (nextRate: number) => {
+    setSpeechRate(nextRate);
+    if (speechStatus === 'playing') {
+      const currentQueueIndex = spokenIndex !== null ? spokenIndex + 1 : 0;
+      speakQueueFrom(currentQueueIndex, nextRate);
+    }
+  };
+
+  // Stop audio when changing chapters, story mode, or leaving the reader
+  useEffect(() => {
+    stopSpeech();
+    return () => {
+      sessionRef.current += 1;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [chapter.number, storyMode, stopSpeech]);
+
   return (
     <div className={`${PAPER_SURFACE[paperTheme]} transition-colors duration-200 min-h-[calc(100vh-4.5rem)]`}>
       {/* Thin editorial reading progress hairline */}
@@ -88,6 +236,78 @@ export function BookReader({
           </div>
 
           <div className="flex items-center gap-2.5 flex-wrap">
+            {speechSupported && (
+              <div
+                className="flex items-center gap-1 p-0.5 bg-stone-200/70 dark:bg-stone-800 rounded-md"
+                role="group"
+                aria-label="Chapter read aloud"
+              >
+                <button
+                  type="button"
+                  onClick={handleTogglePlayPause}
+                  aria-label={
+                    speechStatus === 'playing'
+                      ? 'Pause reading chapter aloud'
+                      : speechStatus === 'paused'
+                        ? 'Resume reading chapter aloud'
+                        : 'Read chapter aloud'
+                  }
+                  className={`px-2.5 py-1.5 text-xs font-display font-semibold rounded inline-flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+                    speechStatus === 'playing'
+                      ? 'bg-[#00583A] text-white shadow-xs'
+                      : speechStatus === 'paused'
+                        ? 'bg-amber-600 text-white shadow-xs'
+                        : 'bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs hover:bg-stone-50 dark:hover:bg-stone-600'
+                  }`}
+                >
+                  {speechStatus === 'playing' ? (
+                    <>
+                      <Pause className="w-3.5 h-3.5" />
+                      <span>Pause</span>
+                    </>
+                  ) : speechStatus === 'paused' ? (
+                    <>
+                      <Play className="w-3.5 h-3.5" />
+                      <span>Resume</span>
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="w-3.5 h-3.5 text-[#00583A] dark:text-emerald-400" />
+                      <span>Read Aloud</span>
+                    </>
+                  )}
+                </button>
+
+                <select
+                  aria-label="Reading speed"
+                  value={speechRate}
+                  onChange={(e) => handleChangeRate(Number(e.target.value))}
+                  className="px-2 py-1.5 text-xs font-display font-semibold rounded bg-transparent text-stone-700 dark:text-stone-200 hover:bg-white/70 dark:hover:bg-stone-700 transition-colors tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00583A] cursor-pointer"
+                >
+                  {[1.15, 1, 0.9, 0.75, 0.5].map((rate) => (
+                    <option
+                      key={rate}
+                      value={rate}
+                      className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
+                    >
+                      {rate}x
+                    </option>
+                  ))}
+                </select>
+
+                {speechStatus !== 'idle' && (
+                  <button
+                    type="button"
+                    onClick={stopSpeech}
+                    aria-label="Stop reading aloud"
+                    title="Stop"
+                    className="p-1.5 rounded text-stone-700 dark:text-stone-200 hover:bg-white/70 dark:hover:bg-stone-700 transition-colors"
+                  >
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Segmented Text Size */}
             <div
@@ -192,12 +412,15 @@ export function BookReader({
                 const isFirst = idx === 0;
                 const isMidPullQuote =
                   activeParagraphs.length >= 6 && idx === Math.floor(activeParagraphs.length / 2);
+                const isBeingSpoken = speechStatus !== 'idle' && spokenIndex === idx;
 
                 return (
                   <div key={`${chapter.number}-p-${idx}`}>
                     <p
-                      className={`${
-                        isFirst ? 'chapter-drop-cap' : ''
+                      className={`${isFirst ? 'chapter-drop-cap' : ''} ${
+                        isBeingSpoken
+                          ? 'bg-[#00583A]/10 dark:bg-emerald-400/10 rounded-md px-3 py-1.5 -mx-3 transition-colors'
+                          : ''
                       } text-pretty`}
                     >
                       {paragraph}
