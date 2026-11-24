@@ -1,0 +1,6 @@
+{
+  "name": "The Ellery Express — Illustrated E-Book",
+  "description": "An illustrated 20-chapter New Zealand fantasy road-trip novel following Oscar from Ellery and Auckland to Moonspire, Copperville, Nightbramble, and back.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

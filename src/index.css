@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-display: "Raleway", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --color-nzta-green: #00583A;
+  --color-nzta-amber: #C26D1F;
+  --color-paper: #FBF9F5;
+  --color-limestone: #F1EDE5;
+  --color-sepia-paper: #F4ECD8;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    background-color: #FBF9F5;
+    color: #1C1917;
+  }
+
+  html.dark {
+    background-color: #141413;
+    color: #EAE6DF;
+  }
+
+  body {
+    font-family: var(--font-serif);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Editorial drop cap for opening chapter paragraphs */
+.chapter-drop-cap::first-letter {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 3.15rem;
+  line-height: 0.85;
+  float: left;
+  padding-top: 0.25rem;
+  padding-right: 0.65rem;
+  padding-bottom: 0.1rem;
+  color: #00583A;
+}
+
+.dark .chapter-drop-cap::first-letter {
+  color: #4ADE80;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
